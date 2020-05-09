@@ -6,13 +6,29 @@ import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class TestImage implements Runnable{
+	private String ip = "localhost";
+	private int port = 22222;
+	
+	private boolean accepted;
+	
+	private Socket socket;
+	private DataOutputStream dos;
+	private DataInputStream dis;
+
+	private ServerSocket serverSocket;
+	
 	private BufferedImage test_hexagon;
 	private JFrame frame;
 	private final int WIDTH = 506;
@@ -27,10 +43,15 @@ public class TestImage implements Runnable{
 	private Painter painter;
 	
 	public TestImage() {
+		System.out.println("IP is: " + ip);
+		System.out.println("Port is: " + port);
+		
 		loadImages();
 		
 		painter = new Painter();
 		painter.setPreferredSize(new Dimension(WIDTH, HEIGHT));
+		
+		if(!connect()) initializeServer();
 		
 		frame = new JFrame();
 		frame.setTitle("Tic-Tac-Toe");
@@ -41,8 +62,8 @@ public class TestImage implements Runnable{
 		frame.setResizable(false);
 		frame.setVisible(true);
 		
-		thread = new Thread(this, "TicTacToe");
-		thread.start();
+		/*thread = new Thread(this, "TicTacToe");
+		thread.start();*/
 	}
 	
 	public void run() {
@@ -52,7 +73,7 @@ public class TestImage implements Runnable{
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			painter.repaint();
+			//painter.repaint();
 		}
 	}
 	
@@ -75,8 +96,8 @@ public class TestImage implements Runnable{
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	public static void main(String[] args) {
-		System.out.println("hi!");
 		TestImage testImage = new TestImage();
 	}
 	
@@ -107,5 +128,37 @@ public class TestImage implements Runnable{
 		@Override
 		public void mouseReleased(MouseEvent e) {}
 		
+	}
+	
+	/********Connection management********/
+	/*
+	 * boolean connect(): Tries to connect to an existing server. If
+	 * connection is unsuccessful, this function starts a new server.
+	*/
+	private boolean connect() {
+		try {
+			socket = new Socket(ip, port);
+			dos = new DataOutputStream(socket.getOutputStream());
+			dis = new DataInputStream(socket.getInputStream());
+			accepted = true;
+		}catch(IOException E) {
+			System.out.println("Unable to connect to " + ip + ":" + port + ".");
+			System.out.println("Starting a server.");
+			return false;
+		}
+		System.out.println("Succesfully connected to the server.");
+		return true;
+	}
+	
+	private void initializeServer() {
+		try {
+			/* There are different ways to write an ip address:
+			 * www.domain.com, 172.12.12.12, localhost...
+			 * For this program, it is used the string "localhost"
+			*/
+			serverSocket = new ServerSocket(port, 8, InetAddress.getByName(ip));
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
