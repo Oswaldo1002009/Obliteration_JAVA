@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -156,8 +157,12 @@ public class TestImage implements Runnable{
 			 * www.domain.com, 172.12.12.12, localhost...
 			 * For this program, it is used the string "localhost"
 			*/
-			serverSocket = new ServerSocket(port, 8, InetAddress.getByName(ip));
-		}catch(Exception e) {
+			/* Backlog is 4, I'm going to try to play 2 to 4 players*/
+			serverSocket = new ServerSocket(port, 1, InetAddress.getByName(ip));
+		}catch(BindException e) {
+			System.out.println("Error: " + ip + ":" + port + " already in use.");
+			System.exit(1);
+		}catch(IOException e) {
 			e.printStackTrace();
 		}
 	}
