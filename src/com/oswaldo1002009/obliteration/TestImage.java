@@ -13,6 +13,7 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
@@ -22,7 +23,7 @@ public class TestImage implements Runnable{
 	private String ip = "localhost";
 	private int port = 22222;
 	
-	private boolean accepted;
+	private boolean accepted = false;
 	
 	private Socket socket;
 	private DataOutputStream dos;
@@ -48,6 +49,10 @@ public class TestImage implements Runnable{
 	//Initial position for the areas;
 	private final int START_X = 4;
 	private final int START_Y = 1;
+	
+	private Random rand = new Random();
+	private boolean unableToConnectWithOpponent = false;
+	private boolean yourTurn = false;
 	
 	private Thread thread;
 	
@@ -86,6 +91,7 @@ public class TestImage implements Runnable{
 		painter = new Painter();
 		painter.setPreferredSize(new Dimension(WIDTH, HEIGHT));
 		
+		//This also gives the first turn to the player who created the server
 		if(!connect()) initializeServer();
 		
 		frame = new JFrame();
@@ -123,17 +129,15 @@ public class TestImage implements Runnable{
 	
 	public void run() {
 		while(true) {
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			tick();
+			painter.repaint();
+			if(!accepted) {
+				listenForServerRequest();
 			}
-			//painter.repaint();
 		}
 	}
 	
 	private void render(Graphics g) {
-		g.drawImage(test_hexagon, 0, 0, null);
 		int moveY;
 		for (int i = 0; i < NUM_HEX_X; i++) {
 			for(int j = 0; j < NUM_HEX_Y; j++) {
@@ -142,6 +146,18 @@ public class TestImage implements Runnable{
 				//Verify the correct position of rectangles
 				/*g.setColor(new Color(255, 0, 0));
 				g.fillRect(START_X + i*HX, START_Y + j*HY+moveY, DIM_X, DIM_Y);*/
+			}
+		}
+	}
+	
+	public void tick() {
+		if(!yourTurn && !unableToConnectWithOpponent) {
+			try {
+				boolean turn = dis.readBoolean();
+				yourTurn = turn;
+			}catch (IOException e) {
+				e.printStackTrace();
+				unableToConnectWithOpponent = true;
 			}
 		}
 	}
@@ -165,7 +181,7 @@ public class TestImage implements Runnable{
 		public Painter() {
 			setFocusable(true);
 			requestFocus();
-			setBackground(Color.WHITE);
+			//setBackground(Color.WHITE);
 			addMouseListener(this);
 		}
 		
@@ -177,9 +193,22 @@ public class TestImage implements Runnable{
 		
 		@Override
 		public synchronized void mouseClicked(MouseEvent e) {
-			clickX = e.getX();
-			clickY = e.getY();
-			System.out.println(clickX + " " + clickY);
+			if(accepted) {
+				if(yourTurn && !unableToConnectWithOpponent) {
+					clickX = e.getX();
+					clickY = e.getY();
+					yourTurn = false;
+					try {
+						dos.writeBoolean(true);
+						dos.flush();
+					}catch(IOException e2) {
+						unableToConnectWithOpponent = true;
+						e2.printStackTrace();
+					}
+					System.out.println("Data was sent to the other player");
+				}
+				//System.out.println(clickX + " " + clickY);
+			}
 		}
 		@Override
 		public void mouseEntered(MouseEvent e) {}
@@ -189,7 +218,19 @@ public class TestImage implements Runnable{
 		public void mousePressed(MouseEvent e) {}
 		@Override
 		public void mouseReleased(MouseEvent e) {}
-		
+	}
+	
+	private void listenForServerRequest() {
+		Socket socket = null;
+		try {
+			socket = serverSocket.accept();
+			dos = new DataOutputStream(socket.getOutputStream());
+			dis = new DataInputStream(socket.getInputStream());
+			accepted = true;
+			System.out.println("Client has requested to join and we have accepted");
+		}catch(IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/********Connection management********/
@@ -226,5 +267,6 @@ public class TestImage implements Runnable{
 		}catch(IOException e) {
 			e.printStackTrace();
 		}
+		yourTurn = true;
 	}
 }
