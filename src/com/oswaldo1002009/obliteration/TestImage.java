@@ -30,18 +30,52 @@ public class TestImage implements Runnable{
 
 	private ServerSocket serverSocket;
 	
-	private BufferedImage test_hexagon;
 	private JFrame frame;
 	private final int WIDTH = 506;
 	private final int HEIGHT = 527;
+	//Displacements to paint hexagons
 	private final int HX = 13;
 	private final int HM = 8;
 	private final int HY = 16;
+	
+	//Dimensions of the hexagon grid
 	private final int NUM_HEX_X = 30;
 	private final int NUM_HEX_Y = 25;
+	
+	//Dimensions of click areas for hexagons
+	private final int DIM_X = 10;
+	private final int DIM_Y = 15;
+	//Initial position for the areas;
+	private final int START_X = 4;
+	private final int START_Y = 1;
+	
 	private Thread thread;
 	
+	private BufferedImage test_hexagon;
+	private Hexagon hexagons[][] = new Hexagon[NUM_HEX_X][NUM_HEX_Y];
+	private Thread threadHexagons[][] = new Thread[NUM_HEX_X][NUM_HEX_Y];
+	
 	private Painter painter;
+	
+	//Coordinates of the click
+	private int clickX = -1;
+	private int clickY = -1;
+	
+	public void setClickX(int x) {
+		this.clickX = x;
+	}
+	
+	public void setClickY(int y) {
+		this.clickY = y;
+	}
+	
+	public int getClickX() {
+		return clickX;
+	}
+	
+	public int getClickY() {
+		return clickY;
+	}
 	
 	public TestImage() {
 		System.out.println("IP is: " + ip);
@@ -63,14 +97,34 @@ public class TestImage implements Runnable{
 		frame.setResizable(false);
 		frame.setVisible(true);
 		
-		/*thread = new Thread(this, "TicTacToe");
-		thread.start();*/
+		//Creating the threads for hexagons
+		int moveY;
+		for (int i = 0; i < NUM_HEX_X; i++) {
+			for(int j = 0; j < NUM_HEX_Y; j++) {
+				moveY = i%2 * HM;
+				hexagons[i][j] = new Hexagon(this, i, j, //this class and actual position in array
+						START_X + i*HX, START_Y + j*HY+moveY,//position of the rectangle to click
+						DIM_X, DIM_Y,//dimensions of the rectangle
+						NUM_HEX_X, NUM_HEX_Y);//total number of rectangles in matrix
+				threadHexagons[i][j] = new Thread(hexagons[i][j]);
+				threadHexagons[i][j].start();
+			}
+		}
+		//Let each hexagon meet all the other
+		for (int i = 0; i < NUM_HEX_X; i++) {
+			for(int j = 0; j < NUM_HEX_Y; j++) {
+				hexagons[i][j].setArrHex(hexagons);
+			}
+		}
+		
+		thread = new Thread(this, "TicTacToe");
+		thread.start();
 	}
 	
 	public void run() {
 		while(true) {
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -85,6 +139,9 @@ public class TestImage implements Runnable{
 			for(int j = 0; j < NUM_HEX_Y; j++) {
 				moveY = i%2 * HM;
 				g.drawImage(test_hexagon, i*HX, j*HY+moveY, null);
+				//Verify the correct position of rectangles
+				/*g.setColor(new Color(255, 0, 0));
+				g.fillRect(START_X + i*HX, START_Y + j*HY+moveY, DIM_X, DIM_Y);*/
 			}
 		}
 	}
@@ -119,7 +176,11 @@ public class TestImage implements Runnable{
 		}
 		
 		@Override
-		public void mouseClicked(MouseEvent e) {}
+		public synchronized void mouseClicked(MouseEvent e) {
+			clickX = e.getX();
+			clickY = e.getY();
+			System.out.println(clickX + " " + clickY);
+		}
 		@Override
 		public void mouseEntered(MouseEvent e) {}
 		@Override
