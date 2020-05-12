@@ -12,13 +12,16 @@ public class Hexagon implements Runnable{
 	//end of the hexagons grid
 	private int limX;
 	private int limY;
+	//rotation of the hexagon
+	private int rotation;
 	
 	TestImage test;
 	
 	private Hexagon[][] arrHex;
 	private Neighbor[] neighbors = new Neighbor[6];
 	
-	public Hexagon(TestImage test, int posX, int posY, int iniX, int iniY, int dimX, int dimY, int limX, int limY) {
+	public Hexagon(TestImage test, int posX, int posY, int iniX, int iniY,
+			int dimX, int dimY, int limX, int limY, int rotation) {
 		this.posX = posX;
 		this.posY = posY;
 		this.iniX = iniX;
@@ -28,6 +31,7 @@ public class Hexagon implements Runnable{
 		this.limX = limX;
 		this.limY = limY;
 		this.test = test;
+		this.rotation = rotation;
 	}
 	//Set the neighbors of the actual hexagon
 	public void setArrHex (Hexagon[][] arrHex) {
@@ -49,6 +53,10 @@ public class Hexagon implements Runnable{
 		
 		if(posX-1 < 0) neighbors[5] = null;
 		else neighbors[5] = new Neighbor(posX-1, posY);
+	}
+	
+	public int getRotation() {
+		return rotation;
 	}
 	
 	private boolean clicked() {

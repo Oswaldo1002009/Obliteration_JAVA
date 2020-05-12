@@ -34,21 +34,25 @@ public class TestImage implements Runnable{
 	private JFrame frame;
 	private final int WIDTH = 506;
 	private final int HEIGHT = 527;
+	//Size of an hexagon
+	private final int SIZEHX = 18;
+	private final int SIZEHY = 17;
 	//Displacements to paint hexagons
 	private final int HX = 13;
 	private final int HM = 8;
 	private final int HY = 16;
-	
 	//Dimensions of the hexagon grid
 	private final int NUM_HEX_X = 30;
 	private final int NUM_HEX_Y = 25;
-	
 	//Dimensions of click areas for hexagons
 	private final int DIM_X = 10;
 	private final int DIM_Y = 15;
 	//Initial position for the areas;
 	private final int START_X = 4;
 	private final int START_Y = 1;
+	//Possible color and rotation combinations
+	private final int ROTATIONS = 6;
+	private final int COLORS = 11;
 	
 	private Random rand = new Random();
 	private boolean unableToConnectWithOpponent = false;
@@ -56,7 +60,7 @@ public class TestImage implements Runnable{
 	
 	private Thread thread;
 	
-	private BufferedImage test_hexagon;
+	private BufferedImage[][] hexagonSprites = new BufferedImage[6][11];
 	private Hexagon hexagons[][] = new Hexagon[NUM_HEX_X][NUM_HEX_Y];
 	private Thread threadHexagons[][] = new Thread[NUM_HEX_X][NUM_HEX_Y];
 	
@@ -94,6 +98,8 @@ public class TestImage implements Runnable{
 		//This also gives the first turn to the player who created the server
 		if(!connect()) initializeServer();
 		
+		createHexagons();
+		
 		frame = new JFrame();
 		frame.setTitle("Tic-Tac-Toe");
 		frame.setContentPane(painter);
@@ -103,6 +109,11 @@ public class TestImage implements Runnable{
 		frame.setResizable(false);
 		frame.setVisible(true);
 		
+		thread = new Thread(this, "TicTacToe");
+		thread.start();
+	}
+	
+	private void createHexagons() {
 		//Creating the threads for hexagons
 		int moveY;
 		for (int i = 0; i < NUM_HEX_X; i++) {
@@ -111,7 +122,8 @@ public class TestImage implements Runnable{
 				hexagons[i][j] = new Hexagon(this, i, j, //this class and actual position in array
 						START_X + i*HX, START_Y + j*HY+moveY,//position of the rectangle to click
 						DIM_X, DIM_Y,//dimensions of the rectangle
-						NUM_HEX_X, NUM_HEX_Y);//total number of rectangles in matrix
+						NUM_HEX_X, NUM_HEX_Y,//total number of rectangles in matrix
+						Math.abs(rand.nextInt())%ROTATIONS);//Rotation position (between 0 and 5)
 				threadHexagons[i][j] = new Thread(hexagons[i][j]);
 				threadHexagons[i][j].start();
 			}
@@ -122,9 +134,6 @@ public class TestImage implements Runnable{
 				hexagons[i][j].setArrHex(hexagons);
 			}
 		}
-		
-		thread = new Thread(this, "TicTacToe");
-		thread.start();
 	}
 	
 	public void run() {
@@ -138,14 +147,18 @@ public class TestImage implements Runnable{
 	}
 	
 	private void render(Graphics g) {
-		int moveY;
-		for (int i = 0; i < NUM_HEX_X; i++) {
-			for(int j = 0; j < NUM_HEX_Y; j++) {
-				moveY = i%2 * HM;
-				g.drawImage(test_hexagon, i*HX, j*HY+moveY, null);
-				//Verify the correct position of rectangles
-				/*g.setColor(new Color(255, 0, 0));
-				g.fillRect(START_X + i*HX, START_Y + j*HY+moveY, DIM_X, DIM_Y);*/
+		if(accepted) {
+			int moveY;
+			int hexagonRotation;
+			for (int i = 0; i < NUM_HEX_X; i++) {
+				for(int j = 0; j < NUM_HEX_Y; j++) {
+					moveY = i%2 * HM;
+					hexagonRotation = hexagons[i][j].getRotation();
+					g.drawImage(hexagonSprites[hexagonRotation][Math.abs(rand.nextInt())%6], i*HX, j*HY+moveY, null);
+					//Verify the correct position of rectangles
+					/*g.setColor(new Color(255, 0, 0));
+					g.fillRect(START_X + i*HX, START_Y + j*HY+moveY, DIM_X, DIM_Y);*/
+				}
 			}
 		}
 	}
@@ -164,7 +177,12 @@ public class TestImage implements Runnable{
 	
 	private void loadImages() {
 		try {
-			test_hexagon = ImageIO.read(getClass().getResourceAsStream("/BasicHexagon.png"));
+			BufferedImage hexagonGrid = ImageIO.read(getClass().getResourceAsStream("/Hexagons.png"));
+			for(int i = 0; i < ROTATIONS; i++) {
+				for(int j = 0; j < COLORS; j++) {
+					hexagonSprites[i][j] = hexagonGrid.getSubimage(SIZEHX*i, SIZEHY*j, SIZEHX, SIZEHY);
+				}
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -181,7 +199,7 @@ public class TestImage implements Runnable{
 		public Painter() {
 			setFocusable(true);
 			requestFocus();
-			//setBackground(Color.WHITE);
+			setBackground(Color.BLACK);
 			addMouseListener(this);
 		}
 		
