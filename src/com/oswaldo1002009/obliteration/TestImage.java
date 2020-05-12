@@ -57,6 +57,8 @@ public class TestImage implements Runnable{
 	private Random rand = new Random();
 	private boolean unableToConnectWithOpponent = false;
 	private boolean yourTurn = false;
+	private int player;
+	private int[] playerColors = new int[2];
 	
 	private Thread thread;
 	
@@ -96,8 +98,15 @@ public class TestImage implements Runnable{
 		painter.setPreferredSize(new Dimension(WIDTH, HEIGHT));
 		
 		//This also gives the first turn to the player who created the server
-		if(!connect()) initializeServer();
-		
+		if(!connect()) {
+			initializeServer();
+			
+		}
+		else {
+			listenPlayerColors();
+			listenHexagonGrid();
+		}
+		setPlayerColors();
 		createHexagons();
 		
 		frame = new JFrame();
@@ -113,17 +122,38 @@ public class TestImage implements Runnable{
 		thread.start();
 	}
 	
+	private void setPlayerColors() {
+		player = 1;
+		//It's COLORS - 1 because the last is considered for the non taken hexagons
+		playerColors[0] = Math.abs(rand.nextInt()%(COLORS-1));
+		playerColors[1] = Math.abs(rand.nextInt()%(COLORS-1));
+		while(playerColors[0] == playerColors[1]) {
+			playerColors[1] = Math.abs(rand.nextInt()%(COLORS-1));
+		}
+	}
+	
 	private void createHexagons() {
 		//Creating the threads for hexagons
 		int moveY;
 		for (int i = 0; i < NUM_HEX_X; i++) {
 			for(int j = 0; j < NUM_HEX_Y; j++) {
 				moveY = i%2 * HM;
+				int rotation = Math.abs(rand.nextInt())%ROTATIONS;
+				int color = COLORS - 1;
+				if (i == j && j == 0) {
+					rotation = 1; //The first hexagon points upper right
+					color = playerColors[0];
+				}
+				else if(i == NUM_HEX_X-1 && j == NUM_HEX_Y-1){//If the last hexagon...
+					//...set rotation to lower left or down depending if the x position is even or odd
+					rotation = ROTATIONS - NUM_HEX_X%2 - 2;
+					color = playerColors[1];
+				}
 				hexagons[i][j] = new Hexagon(this, i, j, //this class and actual position in array
 						START_X + i*HX, START_Y + j*HY+moveY,//position of the rectangle to click
 						DIM_X, DIM_Y,//dimensions of the rectangle
 						NUM_HEX_X, NUM_HEX_Y,//total number of rectangles in matrix
-						Math.abs(rand.nextInt())%ROTATIONS);//Rotation position (between 0 and 5)
+						rotation, color);//Rotation and color position (between 0 and 5)
 				threadHexagons[i][j] = new Thread(hexagons[i][j]);
 				threadHexagons[i][j].start();
 			}
@@ -150,11 +180,14 @@ public class TestImage implements Runnable{
 		if(accepted) {
 			int moveY;
 			int hexagonRotation;
+			int hexagonColor;
 			for (int i = 0; i < NUM_HEX_X; i++) {
 				for(int j = 0; j < NUM_HEX_Y; j++) {
 					moveY = i%2 * HM;
 					hexagonRotation = hexagons[i][j].getRotation();
-					g.drawImage(hexagonSprites[hexagonRotation][Math.abs(rand.nextInt())%6], i*HX, j*HY+moveY, null);
+					hexagonColor = hexagons[i][j].getColor();
+					g.drawImage(hexagonSprites[hexagonRotation][hexagonColor], i*HX, j*HY+moveY, null);
+					//g.drawImage(hexagonSprites[hexagonRotation][Math.abs(rand.nextInt())%6], i*HX, j*HY+moveY, null);
 					//Verify the correct position of rectangles
 					/*g.setColor(new Color(255, 0, 0));
 					g.fillRect(START_X + i*HX, START_Y + j*HY+moveY, DIM_X, DIM_Y);*/
@@ -163,7 +196,7 @@ public class TestImage implements Runnable{
 		}
 	}
 	
-	public void tick() {
+	private void tick() {
 		if(!yourTurn && !unableToConnectWithOpponent) {
 			try {
 				boolean turn = dis.readBoolean();
@@ -173,6 +206,14 @@ public class TestImage implements Runnable{
 				unableToConnectWithOpponent = true;
 			}
 		}
+	}
+	
+	private void listenPlayerColors() {
+		
+	}
+	
+	private void listenHexagonGrid() {
+		
 	}
 	
 	private void loadImages() {
@@ -238,6 +279,7 @@ public class TestImage implements Runnable{
 		public void mouseReleased(MouseEvent e) {}
 	}
 	
+	//Tries to connect with another client
 	private void listenForServerRequest() {
 		Socket socket = null;
 		try {
