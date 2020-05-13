@@ -62,6 +62,10 @@ public class Hexagon implements Runnable{
 		return rotation;
 	}
 	
+	public void setRotation(int rotation) {
+		this.rotation = rotation;
+	}
+	
 	public void nextRotation() {
 		rotation = (rotation+1)%6;
 	}

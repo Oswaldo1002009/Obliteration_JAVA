@@ -45,8 +45,8 @@ public class TestImage implements Runnable{
 	private final int HM = 8;
 	private final int HY = 16;
 	//Dimensions of the hexagon grid
-	private final int NUM_HEX_X = 30;
-	private final int NUM_HEX_Y = 25;
+	private final int NUM_HEX_X = 30;//30
+	private final int NUM_HEX_Y = 26;//25
 	//Dimensions of click areas for hexagons
 	private final int DIM_X = 10;
 	private final int DIM_Y = 15;
@@ -114,7 +114,7 @@ public class TestImage implements Runnable{
 		}
 		else {
 			requestPlayerColors();
-			listenHexagonGrid();
+			//requestHexagonGrid();
 		}
 		createHexagons();
 		
@@ -143,10 +143,25 @@ public class TestImage implements Runnable{
 	
 	private void setPlayerColors(String colors) {
 		player = 1;
-		playerColors[0] = Integer.parseInt(colors.substring(0,1));
-		playerColors[1] = Integer.parseInt(colors.substring(1,2));
-		hexagons[0][0].setColor(playerColors[0]);
-		hexagons[NUM_HEX_X-1][NUM_HEX_Y-1].setColor(playerColors[1]);
+		//The first 4 characters are the player colors
+		playerColors[0] = Integer.parseInt(colors.substring(0,2));
+		playerColors[1] = Integer.parseInt(colors.substring(2,4));
+		setHexagonGrid(colors.substring(4));
+	}
+	
+	private void setHexagonGrid(String grid) {//This receives an string of NUM_HEX_X*NUM_HEX_Y*3
+		int hexagonColor;
+		int hexagonRotation;
+		for (int i = 0; i < NUM_HEX_X; i++) {
+			for(int j = 0; j < NUM_HEX_Y; j++) {
+				hexagonColor = Integer.parseInt(grid.substring(0,2));//The first two digits are the color
+				grid = grid.substring(2);//Cut those two digits
+				hexagons[i][j].setColor(hexagonColor);
+				hexagonRotation = Integer.parseInt(grid.substring(0,1));//The third digit is the rotation
+				grid = grid.substring(1);//Cut that digit
+				hexagons[i][j].setRotation(hexagonRotation);
+			}
+		}
 	}
 	
 	private void createHexagons() {
@@ -268,7 +283,7 @@ public class TestImage implements Runnable{
 	
 	private void requestPlayerColors() {
 		try {
-			dos.writeUTF("2");//2 is for requesting player colors
+			dos.writeUTF("2");//2 is for send player colors
 			dos.flush();
 			System.out.println("Request for colors was sent to player 1");
 		}catch(IOException e2) {
@@ -278,9 +293,15 @@ public class TestImage implements Runnable{
 	}
 	
 	private void sendPlayerColors() {
-		String colors = Integer.toString(playerColors[0]) + Integer.toString(playerColors[1]);
+		//String colors = Integer.toString(playerColors[0]) + Integer.toString(playerColors[1]);
+		String colors = "";
+		if(playerColors[0] < 10) colors += "0" + playerColors[0];
+		else colors += playerColors[0];
+		if(playerColors[1] < 10) colors += "0" + playerColors[1];
+		else colors += playerColors[1];
+		String grid = stringHexagonGrid();
 		try {
-			dos.writeUTF("3"+colors);//3 is for send player colors
+			dos.writeUTF("3"+colors+grid);//3 is for update player colors
 			dos.flush();
 			System.out.println("Colors were sent to player 2");
 		}catch(IOException e2) {
@@ -289,8 +310,18 @@ public class TestImage implements Runnable{
 		}
 	}
 	
-	private void listenHexagonGrid() {
-		
+	private String stringHexagonGrid() {
+		String grid = "";
+		int rot;
+		for (int i = 0; i < NUM_HEX_X; i++) {
+			for(int j = 0; j < NUM_HEX_Y; j++) {
+				rot = hexagons[i][j].getColor();
+				if(rot < 10) grid += ("0" + rot);
+				else grid += rot;
+				grid += hexagons[i][j].getRotation();
+			}
+		}
+		return grid;
 	}
 	
 	private void loadImages() {
