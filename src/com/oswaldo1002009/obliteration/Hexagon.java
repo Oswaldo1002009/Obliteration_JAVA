@@ -39,23 +39,45 @@ public class Hexagon implements Runnable{
 	//Set the neighbors of the actual hexagon
 	public void setArrHex (Hexagon[][] arrHex) {
 		this.arrHex = arrHex;
+		
 		if(posY-1 < 0) neighbors[0] = null;
 		else neighbors[0] = new Neighbor(posX, posY-1);
-		
-		if(posX+1 >= limX) neighbors[1] = null;
-		else neighbors[1] = new Neighbor(posX+1, posY);
-		
-		if(posX+1 >= limX || posY+1 >= limY) neighbors[2] = null;
-		else neighbors[2] = new Neighbor(posX+1, posY+1);
 		
 		if(posY+1 >= limY) neighbors[3] = null;
 		else neighbors[3] = new Neighbor(posX, posY+1);
 		
-		if(posX-1 < 0 || posY+1 > limY) neighbors[4] = null;
-		else neighbors[4] = new Neighbor(posX-1, posY+1);
-		
-		if(posX-1 < 0) neighbors[5] = null;
-		else neighbors[5] = new Neighbor(posX-1, posY);
+		if(posX%2==0) {
+			if(posX+1 >= limX || posY-1 < 0) neighbors[1] = null;
+			else neighbors[1] = new Neighbor(posX+1, posY-1);
+			
+			if(posX+1 >= limX) neighbors[2] = null;
+			else neighbors[2] = new Neighbor(posX+1, posY);
+			
+			if(posX-1 < 0) neighbors[4] = null;
+			else neighbors[4] = new Neighbor(posX-1, posY);
+			
+			if(posX-1 < 0 || posY-1 < 0) neighbors[5] = null;
+			else neighbors[5] = new Neighbor(posX-1, posY-1);
+		}
+		else {
+			if(posX+1 >= limX) neighbors[1] = null;
+			else neighbors[1] = new Neighbor(posX+1, posY);
+			
+			if(posX+1 >= limX || posY+1 >= limY) neighbors[2] = null;
+			else neighbors[2] = new Neighbor(posX+1, posY+1);
+			
+			if(posX-1 < 0 || posY+1 >= limY) neighbors[4] = null;
+			else neighbors[4] = new Neighbor(posX-1, posY+1);
+			
+			if(posX-1 < 0) neighbors[5] = null;
+			else neighbors[5] = new Neighbor(posX-1, posY);
+		}
+	}
+	
+	private void convertNeighbor(Neighbor n) {
+		if (n != null) {
+			arrHex[n.getX()][n.getY()].setColor(this.color);
+		}
 	}
 	
 	public int getRotation() {
@@ -66,7 +88,7 @@ public class Hexagon implements Runnable{
 		this.rotation = rotation;
 	}
 	
-	public void nextRotation() {
+	private void nextRotation() {
 		rotation = (rotation+1)%6;
 	}
 	
@@ -83,7 +105,8 @@ public class Hexagon implements Runnable{
 		int clickY = test.getClickY();
 		boolean insideX = clickX >= iniX && clickX <= finX;
 		boolean insideY = clickY >= iniY && clickY <= finY;
-		return insideX && insideY;
+		boolean sameColor = test.getColorPlayer() == this.color;
+		return insideX && insideY && sameColor;
 	}
 
 	@Override
@@ -94,7 +117,10 @@ public class Hexagon implements Runnable{
 				if(clicked()) {
 					test.setClickX(-1);
 					test.setClickY(-1); //These two are like canceling the click
-					System.out.println("Hi! I'm hexagon " + posX + "," + posY);
+					nextRotation();
+					convertNeighbor(neighbors[this.rotation]);
+					//System.out.println("Hi! I'm hexagon " + posX + "," + posY);
+					test.nextTurn();
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();

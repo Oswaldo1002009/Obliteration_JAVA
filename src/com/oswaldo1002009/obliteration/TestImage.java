@@ -98,6 +98,10 @@ public class TestImage implements Runnable{
 		return player;
 	}
 	
+	public int getColorPlayer() {
+		return playerColors[player];
+	}
+	
 	public TestImage() {
 		System.out.println("IP is: " + ip);
 		System.out.println("Port is: " + port);
@@ -119,7 +123,7 @@ public class TestImage implements Runnable{
 		createHexagons();
 		
 		frame = new JFrame();
-		frame.setTitle("Tic-Tac-Toe");
+		frame.setTitle("Obliteration");
 		frame.setContentPane(painter);
 		frame.setSize(WIDTH, HEIGHT);
 		frame.setLocationRelativeTo(null);
@@ -127,7 +131,7 @@ public class TestImage implements Runnable{
 		frame.setResizable(false);
 		frame.setVisible(true);
 		
-		thread = new Thread(this, "TicTacToe");
+		thread = new Thread(this, "Obliteration");
 		thread.start();
 	}
 	
@@ -281,6 +285,18 @@ public class TestImage implements Runnable{
 		}
 	}
 	
+	public void nextTurn() {
+		yourTurn = false;
+		try {
+			dos.writeUTF("1");//1 is for giving their turn to the other player
+			dos.flush();
+		}catch(IOException e2) {
+			unableToConnectWithOpponent = true;
+			e2.printStackTrace();
+		}
+		System.out.println("Data was sent to the other player");
+	}
+	
 	private void requestPlayerColors() {
 		try {
 			dos.writeUTF("2");//2 is for send player colors
@@ -364,22 +380,13 @@ public class TestImage implements Runnable{
 				if(yourTurn && !unableToConnectWithOpponent) {
 					if(!start) {
 						start = true;
+						nextTurn();
 					}
 					else {
 						clickX = e.getX();
 						clickY = e.getY();
 					}
-					yourTurn = false;
-					try {
-						dos.writeUTF("1");//1 is for giving their turn to the other player
-						dos.flush();
-					}catch(IOException e2) {
-						unableToConnectWithOpponent = true;
-						e2.printStackTrace();
-					}
-					System.out.println("Data was sent to the other player");
 				}
-				//System.out.println(clickX + " " + clickY);
 			}
 		}
 		@Override
