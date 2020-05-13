@@ -70,7 +70,7 @@ public class Hexagon implements Runnable{
 		return color;
 	}
 	
-	public void setColot(int color) {
+	public void setColor(int color) {
 		this.color = color;
 	}
 	

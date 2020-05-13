@@ -2,7 +2,10 @@ package com.oswaldo1002009.obliteration;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
@@ -56,6 +59,7 @@ public class TestImage implements Runnable{
 	
 	private Random rand = new Random();
 	private boolean unableToConnectWithOpponent = false;
+	private boolean start = false;
 	private boolean yourTurn = false;
 	private int player;
 	private int[] playerColors = new int[2];
@@ -65,6 +69,8 @@ public class TestImage implements Runnable{
 	private BufferedImage[][] hexagonSprites = new BufferedImage[6][11];
 	private Hexagon hexagons[][] = new Hexagon[NUM_HEX_X][NUM_HEX_Y];
 	private Thread threadHexagons[][] = new Thread[NUM_HEX_X][NUM_HEX_Y];
+	
+	private Font font = new Font("Verdana", Font.BOLD, 32);
 	
 	private Painter painter;
 	
@@ -88,6 +94,10 @@ public class TestImage implements Runnable{
 		return clickY;
 	}
 	
+	public int getPlayer() {
+		return player;
+	}
+	
 	public TestImage() {
 		System.out.println("IP is: " + ip);
 		System.out.println("Port is: " + port);
@@ -100,13 +110,12 @@ public class TestImage implements Runnable{
 		//This also gives the first turn to the player who created the server
 		if(!connect()) {
 			initializeServer();
-			
+			setPlayerColors();
 		}
 		else {
-			listenPlayerColors();
+			requestPlayerColors();
 			listenHexagonGrid();
 		}
-		setPlayerColors();
 		createHexagons();
 		
 		frame = new JFrame();
@@ -123,13 +132,21 @@ public class TestImage implements Runnable{
 	}
 	
 	private void setPlayerColors() {
-		player = 1;
+		player = 0;//Player 1 is 0, player 2 is 0 for practical purposes
 		//It's COLORS - 1 because the last is considered for the non taken hexagons
 		playerColors[0] = Math.abs(rand.nextInt()%(COLORS-1));
 		playerColors[1] = Math.abs(rand.nextInt()%(COLORS-1));
 		while(playerColors[0] == playerColors[1]) {
 			playerColors[1] = Math.abs(rand.nextInt()%(COLORS-1));
 		}
+	}
+	
+	private void setPlayerColors(String colors) {
+		player = 1;
+		playerColors[0] = Integer.parseInt(colors.substring(0,1));
+		playerColors[1] = Integer.parseInt(colors.substring(1,2));
+		hexagons[0][0].setColor(playerColors[0]);
+		hexagons[NUM_HEX_X-1][NUM_HEX_Y-1].setColor(playerColors[1]);
 	}
 	
 	private void createHexagons() {
@@ -177,7 +194,38 @@ public class TestImage implements Runnable{
 	}
 	
 	private void render(Graphics g) {
-		if(accepted) {
+		if(!accepted) {
+			g.setColor(new Color(0, 0, 0));
+			g.fillRect(0, 0, WIDTH, HEIGHT);
+			g.setColor(Color.LIGHT_GRAY);
+			g.setFont(font);
+			Graphics2D g2 = (Graphics2D) g;
+			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			int stringWidth = g2.getFontMetrics().stringWidth("Waiting for player 2 to join");
+			g.drawString("Waiting for player 2 to join", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+		}
+		else if(accepted && !start && !yourTurn) {
+			g.setColor(new Color(0, 0, 0));
+			g.fillRect(0, 0, WIDTH, HEIGHT);
+			g.setColor(Color.RED);
+			g.setFont(font);
+			Graphics2D g2 = (Graphics2D) g;
+			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			int stringWidth = g2.getFontMetrics().stringWidth("Waiting for player 1");
+			g.drawString("Waiting for player 1", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+			
+		}
+		else if(accepted && !start && yourTurn) {
+			g.setColor(new Color(0, 0, 0));
+			g.fillRect(0, 0, WIDTH, HEIGHT);
+			g.setColor(Color.GREEN);
+			g.setFont(font);
+			Graphics2D g2 = (Graphics2D) g;
+			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			int stringWidth = g2.getFontMetrics().stringWidth("Click to start");
+			g.drawString("Click to start", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+		}
+		else if(accepted && start) {
 			int moveY;
 			int hexagonRotation;
 			int hexagonColor;
@@ -199,8 +247,18 @@ public class TestImage implements Runnable{
 	private void tick() {
 		if(!yourTurn && !unableToConnectWithOpponent) {
 			try {
-				boolean turn = dis.readBoolean();
-				yourTurn = turn;
+				String str = dis.readUTF();
+				switch(str.substring(0,1)) {
+					case "1":
+						yourTurn = true;
+						break;
+					case "2":
+						sendPlayerColors();
+						break;
+					case "3":
+						setPlayerColors(str.substring(1));
+						break;
+				}
 			}catch (IOException e) {
 				e.printStackTrace();
 				unableToConnectWithOpponent = true;
@@ -208,8 +266,27 @@ public class TestImage implements Runnable{
 		}
 	}
 	
-	private void listenPlayerColors() {
-		
+	private void requestPlayerColors() {
+		try {
+			dos.writeUTF("2");//2 is for requesting player colors
+			dos.flush();
+			System.out.println("Request for colors was sent to player 1");
+		}catch(IOException e2) {
+			unableToConnectWithOpponent = true;
+			e2.printStackTrace();
+		}
+	}
+	
+	private void sendPlayerColors() {
+		String colors = Integer.toString(playerColors[0]) + Integer.toString(playerColors[1]);
+		try {
+			dos.writeUTF("3"+colors);//3 is for send player colors
+			dos.flush();
+			System.out.println("Colors were sent to player 2");
+		}catch(IOException e2) {
+			unableToConnectWithOpponent = true;
+			e2.printStackTrace();
+		}
 	}
 	
 	private void listenHexagonGrid() {
@@ -254,11 +331,16 @@ public class TestImage implements Runnable{
 		public synchronized void mouseClicked(MouseEvent e) {
 			if(accepted) {
 				if(yourTurn && !unableToConnectWithOpponent) {
-					clickX = e.getX();
-					clickY = e.getY();
+					if(!start) {
+						start = true;
+					}
+					else {
+						clickX = e.getX();
+						clickY = e.getY();
+					}
 					yourTurn = false;
 					try {
-						dos.writeBoolean(true);
+						dos.writeUTF("1");//1 is for giving their turn to the other player
 						dos.flush();
 					}catch(IOException e2) {
 						unableToConnectWithOpponent = true;
