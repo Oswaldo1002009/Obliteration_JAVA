@@ -55,7 +55,7 @@ public class TestImage implements Runnable{
 	private final int START_Y = 1;
 	//Possible color and rotation combinations
 	private final int ROTATIONS = 6;
-	private final int COLORS = 12;
+	private final int COLORS = 11;
 	
 	private Random rand = new Random();
 	private boolean unableToConnectWithOpponent = false;
@@ -68,7 +68,7 @@ public class TestImage implements Runnable{
 	
 	private Thread thread;
 	
-	private BufferedImage[][] hexagonSprites = new BufferedImage[ROTATIONS][COLORS];
+	private BufferedImage[][] hexagonSprites = new BufferedImage[ROTATIONS][COLORS*2];
 	private Hexagon hexagons[][] = new Hexagon[NUM_HEX_X][NUM_HEX_Y];
 	private Thread threadHexagons[][] = new Thread[NUM_HEX_X][NUM_HEX_Y];
 	
@@ -157,8 +157,8 @@ public class TestImage implements Runnable{
 		player = 0;//Player 1 is 0, player 2 is 0 for practical purposes
 		//It's COLORS - 2 because COLORS - 2 is considered for the non taken hexagons
 		//and COLORS - 1 is for the pointer used in Hexagon class
-		playerColors[0] = Math.abs(rand.nextInt()%(COLORS-2));
-		playerColors[1] = Math.abs(rand.nextInt()%(COLORS-2));
+		playerColors[0] = Math.abs(rand.nextInt()%(COLORS-1));
+		playerColors[1] = Math.abs(rand.nextInt()%(COLORS-1));
 		while(playerColors[0] == playerColors[1]) {
 			playerColors[1] = Math.abs(rand.nextInt()%(COLORS-1));
 		}
@@ -194,8 +194,7 @@ public class TestImage implements Runnable{
 			for(int j = 0; j < NUM_HEX_Y; j++) {
 				moveY = i%2 * HM;
 				int rotation = Math.abs(rand.nextInt())%ROTATIONS;
-				//COLORS - 1 is equal to COLORS - 2, but it works as a pointer in class Hexagon
-				int color = COLORS - 2;
+				int color = COLORS - 1;
 				if (i == j && j == 0) {
 					rotation = 1; //The first hexagon points upper right
 					color = playerColors[0];
@@ -370,7 +369,6 @@ public class TestImage implements Runnable{
 	}
 	
 	private void sendPlayerColors() {
-		//String colors = Integer.toString(playerColors[0]) + Integer.toString(playerColors[1]);
 		String colors = "";
 		if(playerColors[0] < 10) colors += "0" + playerColors[0];
 		else colors += playerColors[0];
@@ -418,7 +416,7 @@ public class TestImage implements Runnable{
 		try {
 			BufferedImage hexagonGrid = ImageIO.read(getClass().getResourceAsStream("/Hexagons.png"));
 			for(int i = 0; i < ROTATIONS; i++) {
-				for(int j = 0; j < COLORS; j++) {
+				for(int j = 0; j < COLORS*2; j++) {
 					hexagonSprites[i][j] = hexagonGrid.getSubimage(SIZEHX*i, SIZEHY*j, SIZEHX, SIZEHY);
 				}
 			}
