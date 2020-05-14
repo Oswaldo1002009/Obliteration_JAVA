@@ -38,21 +38,21 @@ public class TestImage implements Runnable{
 	private final int WIDTH = 506;
 	private final int HEIGHT = 527;
 	//Size of an hexagon
-	private final int SIZEHX = 18;
-	private final int SIZEHY = 17;
+	private final int SIZEHX = 24;//18
+	private final int SIZEHY = 22;//17
 	//Displacements to paint hexagons
-	private final int HX = 13;
-	private final int HM = 8;
-	private final int HY = 16;
+	private final int HX = 17;//13
+	private final int HM = 10;//8
+	private final int HY = 20;//16
 	//Dimensions of the hexagon grid
-	private final int NUM_HEX_X = 30;//30
-	private final int NUM_HEX_Y = 26;//25
+	private final int NUM_HEX_X = 24;
+	private final int NUM_HEX_Y = 20;
 	//Dimensions of click areas for hexagons
-	private final int DIM_X = 10;
-	private final int DIM_Y = 15;
+	private final int DIM_X = 14;//10
+	private final int DIM_Y = 20;//15
 	//Initial position for the areas;
-	private final int START_X = 4;
-	private final int START_Y = 1;
+	private final int START_X = 5;//4
+	private final int START_Y = 1;//1
 	//Possible color and rotation combinations
 	private final int ROTATIONS = 6;
 	private final int COLORS = 11;
@@ -315,6 +315,9 @@ public class TestImage implements Runnable{
 					hexagonRotation = hexagons[i][j].getRotation();
 					hexagonColor = hexagons[i][j].getColor();
 					g.drawImage(hexagonSprites[hexagonRotation][hexagonColor], i*HX, j*HY+moveY, null);
+					//Verify the correct position of rectangles
+					/*g.setColor(new Color(255, 0, 0));
+					g.fillRect(START_X + i*HX, START_Y + j*HY+moveY, DIM_X, DIM_Y);*/
 				}
 			}
 		}
@@ -414,7 +417,7 @@ public class TestImage implements Runnable{
 	
 	private void loadImages() {
 		try {
-			BufferedImage hexagonGrid = ImageIO.read(getClass().getResourceAsStream("/Hexagons.png"));
+			BufferedImage hexagonGrid = ImageIO.read(getClass().getResourceAsStream("/HexagonsM.png"));
 			for(int i = 0; i < ROTATIONS; i++) {
 				for(int j = 0; j < COLORS*2; j++) {
 					hexagonSprites[i][j] = hexagonGrid.getSubimage(SIZEHX*i, SIZEHY*j, SIZEHX, SIZEHY);
