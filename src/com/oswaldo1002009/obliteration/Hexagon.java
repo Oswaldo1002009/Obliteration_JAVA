@@ -19,12 +19,12 @@ public class Hexagon implements Runnable{
 	//color of the hexagon
 	private int color;
 	
-	TestImage test;
+	Obliteration obliteration;
 	
 	private Hexagon[][] arrHex;
 	private Neighbor[] neighbors = new Neighbor[6];
 	
-	public Hexagon(TestImage test, int posX, int posY, int iniX, int iniY,
+	public Hexagon(Obliteration obliteration, int posX, int posY, int iniX, int iniY,
 			int dimX, int dimY, int limX, int limY, int rotation, int color) {
 		this.posX = posX;
 		this.posY = posY;
@@ -34,7 +34,7 @@ public class Hexagon implements Runnable{
 		this.finY = this.iniY + dimY;
 		this.limX = limX;
 		this.limY = limY;
-		this.test = test;
+		this.obliteration = obliteration;
 		this.rotation = rotation;
 		this.color = color;
 	}
@@ -89,8 +89,8 @@ public class Hexagon implements Runnable{
 			x = n.getX();
 			y = n.getY();
 			//If neighbor has not the same color of the converter and has not the pointer...
-			if(arrHex[x][y].getColor() != color && arrHex[x][y].getColor() < test.getCOLORS()) {
-				arrHex[x][y].setColor(test.getCOLORS() + arrHex[x][y].getColor()); //Set the pointer
+			if(arrHex[x][y].getColor() != color && arrHex[x][y].getColor() < obliteration.getCOLORS()) {
+				arrHex[x][y].setColor(obliteration.getCOLORS() + arrHex[x][y].getColor()); //Set the pointer
 				arrHex[x][y].convertNeighbors(conversions, level+1, color);//Recursion call
 			}//...otherwise, ends recursive call
 		}
@@ -99,11 +99,11 @@ public class Hexagon implements Runnable{
 				x = neighbors[i].getX();
 				y = neighbors[i].getY();//Get the position of the neighbor in rotation i
 				//If neighbor has not the same color of the converter and has not the pointer...
-				if(arrHex[x][y].getColor() != color && arrHex[x][y].getColor() < test.getCOLORS()) {
+				if(arrHex[x][y].getColor() != color && arrHex[x][y].getColor() < obliteration.getCOLORS()) {
 					n = arrHex[x][y].pointingAt();//Get at who is pointing the neighbor
 					if(n != null) {//If neighbor is pointing to a valid hexagon
 						if(posX == n.getX() && posY == n.getY()) {//If neighbor is pointing at this 
-							arrHex[x][y].setColor(test.getCOLORS() + arrHex[x][y].getColor()); //Set the pointer
+							arrHex[x][y].setColor(obliteration.getCOLORS() + arrHex[x][y].getColor()); //Set the pointer
 							arrHex[x][y].convertNeighbors(conversions, level+1, color);//Recursion call
 						}
 					}
@@ -166,16 +166,16 @@ public class Hexagon implements Runnable{
 	}
 	
 	private boolean clicked() {
-		int clickX = test.getClickX();
-		int clickY = test.getClickY();
+		int clickX = obliteration.getClickX();
+		int clickY = obliteration.getClickY();
 		boolean insideX = clickX >= iniX && clickX <= finX;
 		boolean insideY = clickY >= iniY && clickY <= finY;
-		boolean sameColor = test.getColorPlayer() == this.color;
+		boolean sameColor = obliteration.getColorPlayer() == this.color;
 		return insideX && insideY && sameColor;
 	}
 	
 	private String whichPlayer() {
-		int player = test.getPlayer();
+		int player = obliteration.getPlayer();
 		if(player == 0) {
 			return "OO";//A way to represent 0
 		}
@@ -188,13 +188,13 @@ public class Hexagon implements Runnable{
 			try {
 				Thread.sleep(0);
 				if(clicked()) {
-					test.setClickX(-1);
-					test.setClickY(-1); //These two are like canceling the click
+					obliteration.setClickX(-1);
+					obliteration.setClickY(-1); //These two are like canceling the click
 					nextRotation();
 					ArrayList<String> conversions = new ArrayList<String>();
 					convertNeighbors(conversions, 0, this.color);
 					String player = whichPlayer();
-					test.sendConversions(arrayListToString(conversions)+player);
+					obliteration.sendConversions(arrayListToString(conversions)+player);
 					//test.nextTurn();
 					//pointingAtMe();
 					//System.out.println("Hi! I'm hexagon " + posX + "," + posY);
