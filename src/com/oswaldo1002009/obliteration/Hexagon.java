@@ -1,5 +1,7 @@
 package com.oswaldo1002009.obliteration;
 
+import java.util.ArrayList;
+
 public class Hexagon implements Runnable{
 	//actual position in array
 	private int posX;
@@ -73,10 +75,75 @@ public class Hexagon implements Runnable{
 			else neighbors[5] = new Neighbor(posX-1, posY);
 		}
 	}
+
 	
-	private void convertNeighbor(Neighbor n) {
+	public void convertNeighbor(ArrayList<String> conversions, int level, int color) {
+		//Add info of the current hexagon
+		if(conversions.size() >= level) {
+			conversions.add("");
+		}
+		conversions.set(level, conversions.get(level) + infoHexagonToString());
+		Neighbor n = neighbors[rotation];
 		if (n != null) {
-			arrHex[n.getX()][n.getY()].setColor(this.color);
+			int x = n.getX();
+			int y = n.getY();
+			if(arrHex[x][y].getColor() != color) {//If neighbor has not the same color of the converter...
+				arrHex[x][y].setColor(color);
+				arrHex[x][y].convertNeighbor(conversions, level+1, color);//Recursion call
+			}//...otherwise, ends recursive call
+		}
+	}
+	
+	private String arrayListToString(ArrayList<String> list) {
+		String converted = "";
+		for (int i = 0; i < list.size(); i++) {
+			converted += "++" + list.get(i);
+		}
+		return converted;
+	}
+	
+	private String infoHexagonToString() {
+		String infoHexagon = "";
+		if (posX < 10) infoHexagon += "0" + posX;
+		else infoHexagon += posX;
+		
+		if (posY < 10) infoHexagon += posY;
+		else infoHexagon += posY;
+		
+		infoHexagon += "0" + rotation;
+		
+		if (color < 10) infoHexagon += "0" + color;
+		else infoHexagon += color;
+		return infoHexagon;
+	}
+	
+	public Neighbor pointingAt() {
+		return neighbors[rotation];
+	}
+	
+	public void convert(int color) {
+		setColor(color);
+		//convertNeighbor(neighbors[this.rotation], color);
+		//pointingAtMe();//Check if neighbors can be converted
+	}
+	
+	private void pointingAtMe(){
+		int x, y;
+		Neighbor neighbor;
+		for(int i = 0; i < 6; i++) {
+			if(neighbors[i] != null) {
+				x = neighbors[i].getX();
+				y = neighbors[i].getY();//Get the position of the neighbor in rotation i
+				if(arrHex[x][y].getColor() != color) {//If neighbor color is not the player color
+					neighbor = arrHex[x][y].pointingAt();//Get at who is pointing the neighbor
+					if(neighbor != null) {//If neighbor is pointing to a valid hexagon
+						if(posX == neighbor.getX() && posY == neighbor.getY()) {//If neighbor is pointing at this 
+							System.out.println(x + " " + y + " is pointing at " + posX + " " + posY);
+							arrHex[x][y].convert(color);//Convert the neighbor to the color of this
+						}
+					}
+				}
+			}
 		}
 	}
 	
@@ -118,7 +185,10 @@ public class Hexagon implements Runnable{
 					test.setClickX(-1);
 					test.setClickY(-1); //These two are like canceling the click
 					nextRotation();
-					convertNeighbor(neighbors[this.rotation]);
+					ArrayList<String> conversions = new ArrayList<String>();
+					convertNeighbor(conversions, 0, this.color);
+					System.out.println(arrayListToString(conversions));
+					//pointingAtMe();
 					//System.out.println("Hi! I'm hexagon " + posX + "," + posY);
 					test.nextTurn();
 				}
