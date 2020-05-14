@@ -55,7 +55,7 @@ public class TestImage implements Runnable{
 	private final int START_Y = 1;
 	//Possible color and rotation combinations
 	private final int ROTATIONS = 6;
-	private final int COLORS = 11;
+	private final int COLORS = 12;
 	
 	private Random rand = new Random();
 	private boolean unableToConnectWithOpponent = false;
@@ -64,9 +64,11 @@ public class TestImage implements Runnable{
 	private int player;
 	private int[] playerColors = new int[2];
 	
+	private String conversions = "NO";
+	
 	private Thread thread;
 	
-	private BufferedImage[][] hexagonSprites = new BufferedImage[6][11];
+	private BufferedImage[][] hexagonSprites = new BufferedImage[ROTATIONS][COLORS];
 	private Hexagon hexagons[][] = new Hexagon[NUM_HEX_X][NUM_HEX_Y];
 	private Thread threadHexagons[][] = new Thread[NUM_HEX_X][NUM_HEX_Y];
 	
@@ -100,6 +102,22 @@ public class TestImage implements Runnable{
 	
 	public int getColorPlayer() {
 		return playerColors[player];
+	}
+	
+	public int getCOLORS() {
+		return COLORS;
+	}
+	
+	public void setConversions(String converting) {
+		conversions = converting;
+	}
+	
+	private String whichPlayer() {
+		int player = getPlayer();
+		if(player == 0) {
+			return "OO";//A way to represent 0
+		}
+		return "II";//Represents 1
 	}
 	
 	public TestImage() {
@@ -137,9 +155,10 @@ public class TestImage implements Runnable{
 	
 	private void setPlayerColors() {
 		player = 0;//Player 1 is 0, player 2 is 0 for practical purposes
-		//It's COLORS - 1 because the last is considered for the non taken hexagons
-		playerColors[0] = Math.abs(rand.nextInt()%(COLORS-1));
-		playerColors[1] = Math.abs(rand.nextInt()%(COLORS-1));
+		//It's COLORS - 2 because COLORS - 2 is considered for the non taken hexagons
+		//and COLORS - 1 is for the pointer used in Hexagon class
+		playerColors[0] = Math.abs(rand.nextInt()%(COLORS-2));
+		playerColors[1] = Math.abs(rand.nextInt()%(COLORS-2));
 		while(playerColors[0] == playerColors[1]) {
 			playerColors[1] = Math.abs(rand.nextInt()%(COLORS-1));
 		}
@@ -175,7 +194,8 @@ public class TestImage implements Runnable{
 			for(int j = 0; j < NUM_HEX_Y; j++) {
 				moveY = i%2 * HM;
 				int rotation = Math.abs(rand.nextInt())%ROTATIONS;
-				int color = COLORS - 1;
+				//COLORS - 1 is equal to COLORS - 2, but it works as a pointer in class Hexagon
+				int color = COLORS - 2;
 				if (i == j && j == 0) {
 					rotation = 1; //The first hexagon points upper right
 					color = playerColors[0];
@@ -204,11 +224,54 @@ public class TestImage implements Runnable{
 	
 	public void run() {
 		while(true) {
-			tick();
-			painter.repaint();
+			if(!conversions.equals("NO")) {//Means it could have pending conversions
+				if(conversions.equals("OO") || conversions.equals("II")) {//No more conversions to do
+					//Turn of this player activates if the message came from the other player
+					if(!whichPlayer().equals(conversions)) yourTurn = true;
+					conversions = "NO";
+				}else {//This starts with ++
+					conversions = conversions.substring(2);
+					convertHexagons();
+					painter.repaint();
+					try {
+						Thread.sleep(250);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			else {
+				tick();
+				painter.repaint();
+			}
+			//tick();
 			if(!accepted) {
 				listenForServerRequest();
 			}
+		}
+	}
+	
+	private void convertHexagons() {
+		int x, y, rotation, color;
+		while(!conversions.equals("")) {
+			if(conversions.substring(0,2).equals("++")) return;
+			if(conversions.substring(0,2).equals("OO")) return;
+			if(conversions.substring(0,2).equals("II")) return;
+			System.out.println(conversions.substring(0,8));
+			x = Integer.parseInt(conversions.substring(0,2));
+			conversions = conversions.substring(2);
+			
+			y = Integer.parseInt(conversions.substring(0,2));
+			conversions = conversions.substring(2);
+			
+			rotation = Integer.parseInt(conversions.substring(0,2));
+			conversions = conversions.substring(2);
+			
+			color = Integer.parseInt(conversions.substring(0,2));
+			conversions = conversions.substring(2);
+			
+			hexagons[x][y].setRotation(rotation);
+			hexagons[x][y].setColor(color);
 		}
 	}
 	
@@ -254,10 +317,6 @@ public class TestImage implements Runnable{
 					hexagonRotation = hexagons[i][j].getRotation();
 					hexagonColor = hexagons[i][j].getColor();
 					g.drawImage(hexagonSprites[hexagonRotation][hexagonColor], i*HX, j*HY+moveY, null);
-					//g.drawImage(hexagonSprites[hexagonRotation][Math.abs(rand.nextInt())%6], i*HX, j*HY+moveY, null);
-					//Verify the correct position of rectangles
-					/*g.setColor(new Color(255, 0, 0));
-					g.fillRect(START_X + i*HX, START_Y + j*HY+moveY, DIM_X, DIM_Y);*/
 				}
 			}
 		}

@@ -82,13 +82,14 @@ public class Hexagon implements Runnable{
 		if(conversions.size() >= level) {
 			conversions.add("");
 		}
-		conversions.set(level, conversions.get(level) + infoHexagonToString());
+		conversions.set(level, conversions.get(level) + infoHexagonToString(color));
 		Neighbor n = neighbors[rotation];
 		if (n != null) {
 			int x = n.getX();
 			int y = n.getY();
-			if(arrHex[x][y].getColor() != color) {//If neighbor has not the same color of the converter...
-				arrHex[x][y].setColor(color);
+			//If neighbor has not the same color of the converter and has not the pointer...
+			if(arrHex[x][y].getColor() != color && arrHex[x][y].getColor() != test.getCOLORS()-1) {
+				arrHex[x][y].setColor(test.getCOLORS() - 1); //Set the pointer
 				arrHex[x][y].convertNeighbor(conversions, level+1, color);//Recursion call
 			}//...otherwise, ends recursive call
 		}
@@ -102,12 +103,12 @@ public class Hexagon implements Runnable{
 		return converted;
 	}
 	
-	private String infoHexagonToString() {
+	private String infoHexagonToString(int color) {
 		String infoHexagon = "";
 		if (posX < 10) infoHexagon += "0" + posX;
 		else infoHexagon += posX;
 		
-		if (posY < 10) infoHexagon += posY;
+		if (posY < 10) infoHexagon += "0" + posY;
 		else infoHexagon += posY;
 		
 		infoHexagon += "0" + rotation;
@@ -175,6 +176,14 @@ public class Hexagon implements Runnable{
 		boolean sameColor = test.getColorPlayer() == this.color;
 		return insideX && insideY && sameColor;
 	}
+	
+	private String whichPlayer() {
+		int player = test.getPlayer();
+		if(player == 0) {
+			return "OO";//A way to represent 0
+		}
+		return "II";//Represents 1
+	}
 
 	@Override
 	public void run() {
@@ -187,10 +196,11 @@ public class Hexagon implements Runnable{
 					nextRotation();
 					ArrayList<String> conversions = new ArrayList<String>();
 					convertNeighbor(conversions, 0, this.color);
-					System.out.println(arrayListToString(conversions));
+					String player = whichPlayer();
+					test.setConversions(arrayListToString(conversions)+player);
+					test.nextTurn();
 					//pointingAtMe();
 					//System.out.println("Hi! I'm hexagon " + posX + "," + posY);
-					test.nextTurn();
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
