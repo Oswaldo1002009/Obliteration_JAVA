@@ -108,7 +108,7 @@ public class TestImage implements Runnable{
 		return COLORS;
 	}
 	
-	public void setConversions(String converting) {
+	private void setConversions(String converting) {
 		conversions = converting;
 	}
 	
@@ -257,7 +257,6 @@ public class TestImage implements Runnable{
 			if(conversions.substring(0,2).equals("++")) return;
 			if(conversions.substring(0,2).equals("OO")) return;
 			if(conversions.substring(0,2).equals("II")) return;
-			System.out.println(conversions.substring(0,8));
 			x = Integer.parseInt(conversions.substring(0,2));
 			conversions = conversions.substring(2);
 			
@@ -336,6 +335,9 @@ public class TestImage implements Runnable{
 					case "3":
 						setPlayerColors(str.substring(1));
 						break;
+					case "4":
+						setConversions(str.substring(1));
+						
 				}
 			}catch (IOException e) {
 				e.printStackTrace();
@@ -383,6 +385,19 @@ public class TestImage implements Runnable{
 			unableToConnectWithOpponent = true;
 			e2.printStackTrace();
 		}
+	}
+	
+	public void sendConversions(String conversions) {
+		setConversions(conversions);
+		yourTurn = false;
+		try {
+			dos.writeUTF("4"+conversions);//1 is for giving their turn to the other player
+			dos.flush();
+		}catch(IOException e2) {
+			unableToConnectWithOpponent = true;
+			e2.printStackTrace();
+		}
+		System.out.println("Data was sent to the other player");
 	}
 	
 	private String stringHexagonGrid() {

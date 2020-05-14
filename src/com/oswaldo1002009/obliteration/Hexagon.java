@@ -197,8 +197,8 @@ public class Hexagon implements Runnable{
 					ArrayList<String> conversions = new ArrayList<String>();
 					convertNeighbor(conversions, 0, this.color);
 					String player = whichPlayer();
-					test.setConversions(arrayListToString(conversions)+player);
-					test.nextTurn();
+					test.sendConversions(arrayListToString(conversions)+player);
+					//test.nextTurn();
 					//pointingAtMe();
 					//System.out.println("Hi! I'm hexagon " + posX + "," + posY);
 				}
