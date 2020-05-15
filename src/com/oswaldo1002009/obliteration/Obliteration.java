@@ -27,8 +27,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Obliteration implements Runnable{
-	private String ip = "";
-	private int port = 0;
+	private String ip = "localhost";
+	private int port = 2222;
 	private Scanner scanner = new Scanner(System.in);
 	
 	private boolean accepted = false;
@@ -64,6 +64,7 @@ public class Obliteration implements Runnable{
 	//Possible color and rotation combinations
 	private final int ROTATIONS = 6;
 	private final int COLORS = 11;
+	private ColorsInfo colorsInfo = new ColorsInfo();
 	
 	private Random rand = new Random();
 	private boolean unableToConnectWithOpponent = false;
@@ -81,6 +82,7 @@ public class Obliteration implements Runnable{
 	private Thread threadHexagons[][] = new Thread[NUM_HEX_X][NUM_HEX_Y];
 	
 	private Font fontSmall;
+	private Font fontSmallBold;
 	private Font font;
 	
 	private Painter painter;
@@ -130,15 +132,20 @@ public class Obliteration implements Runnable{
 	}
 	
 	public Obliteration() {
-		/*System.out.println("IP is: " + ip);
-		System.out.println("Port is: " + port);*/
-		System.out.println("Please input the IP: ");
-		ip = scanner.nextLine();
-		System.out.println("Please input the port: ");
-		port = scanner.nextInt();
-		while (port < 1 || port > 65535) {
-			System.out.println("The port you entered was invalid, please input another port: ");
+		boolean predetermined = false;
+		if(predetermined) {
+			System.out.println("IP is: " + ip);
+			System.out.println("Port is: " + port);
+		}
+		else {
+			System.out.println("Please input the IP: ");
+			ip = scanner.nextLine();
+			System.out.println("Please input the port: ");
 			port = scanner.nextInt();
+			while (port < 1 || port > 65535) {
+				System.out.println("Please input a port between 1 and 65535: ");
+				port = scanner.nextInt();
+			}
 		}
 		
 		loadImages();
@@ -251,6 +258,7 @@ public class Obliteration implements Runnable{
 					//Turn of this player activates if the message came from the other player
 					if(!whichPlayer().equals(conversions)) yourTurn = true;
 					conversions = "NO";
+					painter.repaint();
 				}else {//This starts with ++
 					conversions = conversions.substring(2);
 					convertHexagons();
@@ -300,6 +308,19 @@ public class Obliteration implements Runnable{
 		}
 	}
 	
+	private int[] obliterationScores() {
+		int[] scores = {0,0};
+		for (int i = 0; i < NUM_HEX_X; i++) {
+			for (int j = 0; j < NUM_HEX_Y; j++) {
+				if(playerColors[0] == hexagons[i][j].getColor()
+						|| playerColors[0] == hexagons[i][j].getColor()+COLORS) scores[0]++;
+				else if(playerColors[1] == hexagons[i][j].getColor()
+						|| playerColors[1] == hexagons[i][j].getColor()+COLORS) scores[1]++;
+			}
+		}
+		return scores;
+	}
+	
 	private void render(Graphics g) {
 		if(!accepted) {
 			g.setColor(new Color(0, 0, 0));
@@ -330,7 +351,7 @@ public class Obliteration implements Runnable{
 			Graphics2D g2 = (Graphics2D) g;
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 			int stringWidth = g2.getFontMetrics().stringWidth("CLICK TO START");
-			g.drawString("CLICK TO START", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+			g.drawString("CLICK TO START", WIDTH / 2 - stringWidth / 2, HEIGHT - 50);
 		}
 		else if(accepted && start) {
 			int moveY;
@@ -347,13 +368,36 @@ public class Obliteration implements Runnable{
 					g.fillRect(START_X + i*HX, START_Y + j*HY+moveY, DIM_X, DIM_Y);*/
 				}
 			}
-			g.setColor(Color.WHITE);
-			g.setFont(fontSmall);
 			Graphics2D g2 = (Graphics2D) g;
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			//int stringWidth = g2.getFontMetrics().stringWidth("CLICK TO START");
-			//g.drawString("CLICK TO START", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+			
+			int[] oS = obliterationScores();
+			if(yourTurn && player == 0) {
+				g.setFont(fontSmallBold);
+				g.setColor(colorsInfo.transparentColors[playerColors[0]]);
+				g.fillRoundRect(475, 55, 180, 180, 10, 10);
+				g.setColor(colorsInfo.normalColors[playerColors[0]]);
+				g.drawRoundRect(475, 55, 180, 180, 10, 10);
+			}
+			else g.setFont(fontSmall);
+			g.setColor(colorsInfo.normalColors[playerColors[0]]);
 			g.drawString("PLAYER 1", 500, 80);
+			g.setFont(font);
+			//String of a 2 decimals number
+			g.drawString("" + String.format("%.4g%n",(100*(0.0+oS[0])/(oS[0]+oS[1]))) + "%", 525, 130);
+			
+			if(yourTurn && player == 1) {
+				g.setFont(fontSmallBold);
+				g.setColor(colorsInfo.transparentColors[playerColors[1]]);
+				g.fillRoundRect(475, 255, 180, 180, 10, 10);
+				g.setColor(colorsInfo.normalColors[playerColors[1]]);
+				g.drawRoundRect(475, 255, 180, 180, 10, 10);
+			}
+			else g.setFont(fontSmall);
+			g.setColor(colorsInfo.normalColors[playerColors[1]]);
+			g.drawString("PLAYER 2", 500, 280);
+			g.setFont(font);
+			g.drawString("" + String.format("%.4g%n",(100*(0.0+oS[1])/(oS[0]+oS[1]))) + "%", 525, 330);
 		}
 	}
 	
@@ -475,6 +519,7 @@ public class Obliteration implements Runnable{
 			Font fileFont = Font.createFont(Font.TRUETYPE_FONT, new File("res/Elianto-Regular.ttf"));
 		    font = fileFont.deriveFont(36f);
 		    fontSmall = fileFont.deriveFont(24f);
+		    fontSmallBold = fileFont.deriveFont(Font.BOLD, 24f);
 		    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		    //register the fonts
 		    ge.registerFont(font);
