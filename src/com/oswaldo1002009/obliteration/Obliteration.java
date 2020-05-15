@@ -3,28 +3,33 @@ package com.oswaldo1002009.obliteration;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
+import java.util.Scanner;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Obliteration implements Runnable{
-	private String ip = "localhost";
-	private int port = 22222;
+	private String ip = "";
+	private int port = 0;
+	private Scanner scanner = new Scanner(System.in);
 	
 	private boolean accepted = false;
 	
@@ -35,8 +40,11 @@ public class Obliteration implements Runnable{
 	private ServerSocket serverSocket;
 	
 	private JFrame frame;
-	private final int WIDTH = 506;
-	private final int HEIGHT = 527;
+	private final int WIDTH = 700;
+	private final int HEIGHT = 501;
+	//Absolute displacement of the grid
+	private final int DISPX = 30;
+	private final int DISPY = 30;
 	//Size of an hexagon
 	private final int SIZEHX = 24;//18
 	private final int SIZEHY = 22;//17
@@ -72,7 +80,8 @@ public class Obliteration implements Runnable{
 	private Hexagon hexagons[][] = new Hexagon[NUM_HEX_X][NUM_HEX_Y];
 	private Thread threadHexagons[][] = new Thread[NUM_HEX_X][NUM_HEX_Y];
 	
-	private Font font = new Font("Verdana", Font.BOLD, 32);
+	private Font fontSmall;
+	private Font font;
 	
 	private Painter painter;
 	
@@ -121,10 +130,19 @@ public class Obliteration implements Runnable{
 	}
 	
 	public Obliteration() {
-		System.out.println("IP is: " + ip);
-		System.out.println("Port is: " + port);
+		/*System.out.println("IP is: " + ip);
+		System.out.println("Port is: " + port);*/
+		System.out.println("Please input the IP: ");
+		ip = scanner.nextLine();
+		System.out.println("Please input the port: ");
+		port = scanner.nextInt();
+		while (port < 1 || port > 65535) {
+			System.out.println("The port you entered was invalid, please input another port: ");
+			port = scanner.nextInt();
+		}
 		
 		loadImages();
+		loadFonts();
 		
 		painter = new Painter();
 		painter.setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -172,6 +190,7 @@ public class Obliteration implements Runnable{
 		setHexagonGrid(colors.substring(4));
 	}
 	
+	//initialize the grid
 	private void setHexagonGrid(String grid) {//This receives an string of NUM_HEX_X*NUM_HEX_Y*3
 		int hexagonColor;
 		int hexagonRotation;
@@ -187,6 +206,7 @@ public class Obliteration implements Runnable{
 		}
 	}
 	
+	//initialize the hexagons
 	private void createHexagons() {
 		//Creating the threads for hexagons
 		int moveY;
@@ -205,7 +225,7 @@ public class Obliteration implements Runnable{
 					color = playerColors[1];
 				}
 				hexagons[i][j] = new Hexagon(this, i, j, //this class and actual position in array
-						START_X + i*HX, START_Y + j*HY+moveY,//position of the rectangle to click
+						DISPX + START_X + i*HX, DISPY + START_Y + j*HY+moveY,//position of the rectangle to click
 						DIM_X, DIM_Y,//dimensions of the rectangle
 						NUM_HEX_X, NUM_HEX_Y,//total number of rectangles in matrix
 						rotation, color);//Rotation and color position (between 0 and 5)
@@ -221,6 +241,9 @@ public class Obliteration implements Runnable{
 		}
 	}
 	
+	//from tick() option "4" the player can take its turn once
+	//it finishes processing the string of conversions
+	//and just if the string was sent by the other player
 	public void run() {
 		while(true) {
 			if(!conversions.equals("NO")) {//Means it could have pending conversions
@@ -250,6 +273,10 @@ public class Obliteration implements Runnable{
 		}
 	}
 	
+	//process the string to convert the hexagons
+	//All hexagons are converted at the same time until it is find
+	//a "++", "OO" or "II", then the void run waits and resend
+	//the string to this
 	private void convertHexagons() {
 		int x, y, rotation, color;
 		while(!conversions.equals("")) {
@@ -281,8 +308,8 @@ public class Obliteration implements Runnable{
 			g.setFont(font);
 			Graphics2D g2 = (Graphics2D) g;
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			int stringWidth = g2.getFontMetrics().stringWidth("Waiting for player 2 to join");
-			g.drawString("Waiting for player 2 to join", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+			int stringWidth = g2.getFontMetrics().stringWidth("WAITING FOR PLAYER 2 TO JOIN");
+			g.drawString("WAITING FOR PLAYER 2 TO JOIN", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
 		}
 		else if(accepted && !start && !yourTurn) {
 			g.setColor(new Color(0, 0, 0));
@@ -291,8 +318,8 @@ public class Obliteration implements Runnable{
 			g.setFont(font);
 			Graphics2D g2 = (Graphics2D) g;
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			int stringWidth = g2.getFontMetrics().stringWidth("Waiting for player 1");
-			g.drawString("Waiting for player 1", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+			int stringWidth = g2.getFontMetrics().stringWidth("WAITING FOR PLAYER 1");
+			g.drawString("WAITING FOR PLAYER 1", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
 			
 		}
 		else if(accepted && !start && yourTurn) {
@@ -302,8 +329,8 @@ public class Obliteration implements Runnable{
 			g.setFont(font);
 			Graphics2D g2 = (Graphics2D) g;
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			int stringWidth = g2.getFontMetrics().stringWidth("Click to start");
-			g.drawString("Click to start", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+			int stringWidth = g2.getFontMetrics().stringWidth("CLICK TO START");
+			g.drawString("CLICK TO START", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
 		}
 		else if(accepted && start) {
 			int moveY;
@@ -314,15 +341,23 @@ public class Obliteration implements Runnable{
 					moveY = i%2 * HM;
 					hexagonRotation = hexagons[i][j].getRotation();
 					hexagonColor = hexagons[i][j].getColor();
-					g.drawImage(hexagonSprites[hexagonRotation][hexagonColor], i*HX, j*HY+moveY, null);
+					g.drawImage(hexagonSprites[hexagonRotation][hexagonColor], DISPX + i*HX, DISPY + j*HY+moveY, null);
 					//Verify the correct position of rectangles
 					/*g.setColor(new Color(255, 0, 0));
 					g.fillRect(START_X + i*HX, START_Y + j*HY+moveY, DIM_X, DIM_Y);*/
 				}
 			}
+			g.setColor(Color.WHITE);
+			g.setFont(fontSmall);
+			Graphics2D g2 = (Graphics2D) g;
+			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			//int stringWidth = g2.getFontMetrics().stringWidth("CLICK TO START");
+			//g.drawString("CLICK TO START", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+			g.drawString("PLAYER 1", 500, 80);
 		}
 	}
 	
+	//manages the string sent by the other player
 	private void tick() {
 		if(!yourTurn && !unableToConnectWithOpponent) {
 			try {
@@ -348,6 +383,7 @@ public class Obliteration implements Runnable{
 		}
 	}
 	
+	//cancels the turn of this player and gives it to the other
 	public void nextTurn() {
 		yourTurn = false;
 		try {
@@ -360,6 +396,7 @@ public class Obliteration implements Runnable{
 		System.out.println("Data was sent to the other player");
 	}
 	
+	//asks for player colors to the other player
 	private void requestPlayerColors() {
 		try {
 			dos.writeUTF("2");//2 is for send player colors
@@ -371,6 +408,7 @@ public class Obliteration implements Runnable{
 		}
 	}
 	
+	//sends the colors of both players to the other player
 	private void sendPlayerColors() {
 		String colors = "";
 		if(playerColors[0] < 10) colors += "0" + playerColors[0];
@@ -388,6 +426,8 @@ public class Obliteration implements Runnable{
 		}
 	}
 	
+	//Send the string of conversions to the other player
+	//this leads to the other player to get its turn (on another function)
 	public void sendConversions(String conversions) {
 		setConversions(conversions);
 		yourTurn = false;
@@ -401,6 +441,7 @@ public class Obliteration implements Runnable{
 		System.out.println("Data was sent to the other player");
 	}
 	
+	//Generates a string with all actual rotations of the grid
 	private String stringHexagonGrid() {
 		String grid = "";
 		int rot;
@@ -425,6 +466,23 @@ public class Obliteration implements Runnable{
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	private void loadFonts() {
+		try {
+		    //create the font to use with sizes
+			Font fileFont = Font.createFont(Font.TRUETYPE_FONT, new File("res/Elianto-Regular.ttf"));
+		    font = fileFont.deriveFont(36f);
+		    fontSmall = fileFont.deriveFont(24f);
+		    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		    //register the fonts
+		    ge.registerFont(font);
+		    ge.registerFont(fontSmall);
+		} catch (IOException e) {
+		    e.printStackTrace();
+		} catch(FontFormatException e) {
+		    e.printStackTrace();
 		}
 	}
 	
