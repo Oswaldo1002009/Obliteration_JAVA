@@ -25,7 +25,7 @@ public class ColorsInfo {
 		normalColors[4] = new Color(0,127,127);
 		normalColors[5] = new Color(182,155,255);
 		normalColors[6] = new Color(255,255,255);
-		normalColors[7] = new Color(0,0,0);
+		normalColors[7] = new Color(127,127,127);
 		normalColors[8] = new Color(255,195,155);
 		normalColors[9] = new Color(255,173,208);
 	}

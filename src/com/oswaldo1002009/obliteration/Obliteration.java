@@ -132,7 +132,7 @@ public class Obliteration implements Runnable{
 	}
 	
 	public Obliteration() {
-		boolean predetermined = false;
+		boolean predetermined = true;
 		if(predetermined) {
 			System.out.println("IP is: " + ip);
 			System.out.println("Port is: " + port);
@@ -322,7 +322,15 @@ public class Obliteration implements Runnable{
 	}
 	
 	private void render(Graphics g) {
-		if(!accepted) {
+		if(unableToConnectWithOpponent) {
+			Graphics2D g2 = (Graphics2D) g;
+			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			g.setFont(fontSmallBold);
+			g.setColor(Color.RED);
+			int stringWidth = g2.getFontMetrics().stringWidth("Error. Unable to connect with opponent.");
+			g.drawString("Error. Unable to connect with opponent.", WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+		}
+		else if(!accepted) {
 			g.setColor(new Color(0, 0, 0));
 			g.fillRect(0, 0, WIDTH, HEIGHT);
 			g.setColor(Color.LIGHT_GRAY);
@@ -335,7 +343,7 @@ public class Obliteration implements Runnable{
 		else if(accepted && !start && !yourTurn) {
 			g.setColor(new Color(0, 0, 0));
 			g.fillRect(0, 0, WIDTH, HEIGHT);
-			g.setColor(Color.RED);
+			g.setColor(Color.YELLOW);
 			g.setFont(font);
 			Graphics2D g2 = (Graphics2D) g;
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -372,6 +380,7 @@ public class Obliteration implements Runnable{
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 			
 			int[] oS = obliterationScores();
+			int stringWidth;
 			if(yourTurn && player == 0) {
 				g.setFont(fontSmallBold);
 				g.setColor(colorsInfo.transparentColors[playerColors[0]]);
@@ -381,7 +390,8 @@ public class Obliteration implements Runnable{
 			}
 			else g.setFont(fontSmall);
 			g.setColor(colorsInfo.normalColors[playerColors[0]]);
-			g.drawString("PLAYER 1", 500, 80);
+			stringWidth = g2.getFontMetrics().stringWidth("PLAYER 1");
+			g.drawString("PLAYER 1", 565 - stringWidth/2, 80);
 			g.setFont(font);
 			//String of a 2 decimals number
 			g.drawString("" + String.format("%.4g%n",(100*(0.0+oS[0])/(oS[0]+oS[1]))) + "%", 525, 130);
@@ -421,7 +431,7 @@ public class Obliteration implements Runnable{
 						
 				}
 			}catch (IOException e) {
-				e.printStackTrace();
+				System.out.println("Error. Connection lost.");
 				unableToConnectWithOpponent = true;
 			}
 		}
@@ -433,11 +443,11 @@ public class Obliteration implements Runnable{
 		try {
 			dos.writeUTF("1");//1 is for giving their turn to the other player
 			dos.flush();
+			System.out.println("Data was sent to the other player");
 		}catch(IOException e2) {
 			unableToConnectWithOpponent = true;
-			e2.printStackTrace();
+			System.out.println("Error. Connection lost.");
 		}
-		System.out.println("Data was sent to the other player");
 	}
 	
 	//asks for player colors to the other player
@@ -448,7 +458,7 @@ public class Obliteration implements Runnable{
 			System.out.println("Request for colors was sent to player 1");
 		}catch(IOException e2) {
 			unableToConnectWithOpponent = true;
-			e2.printStackTrace();
+			System.out.println("Error. Connection lost.");
 		}
 	}
 	
@@ -466,7 +476,7 @@ public class Obliteration implements Runnable{
 			System.out.println("Colors were sent to player 2");
 		}catch(IOException e2) {
 			unableToConnectWithOpponent = true;
-			e2.printStackTrace();
+			System.out.println("Error. Connection lost.");
 		}
 	}
 	
@@ -478,11 +488,11 @@ public class Obliteration implements Runnable{
 		try {
 			dos.writeUTF("4"+conversions);//1 is for giving their turn to the other player
 			dos.flush();
+			System.out.println("Data was sent to the other player");
 		}catch(IOException e2) {
 			unableToConnectWithOpponent = true;
-			e2.printStackTrace();
+			System.out.println("Error. Connection lost.");
 		}
-		System.out.println("Data was sent to the other player");
 	}
 	
 	//Generates a string with all actual rotations of the grid
@@ -620,7 +630,7 @@ public class Obliteration implements Runnable{
 			/* Backlog is 4, I'm going to try to play 2 to 4 players*/
 			serverSocket = new ServerSocket(port, 1, InetAddress.getByName(ip));
 		}catch(BindException e) {
-			System.out.println("Error: " + ip + ":" + port + " already in use.");
+			System.out.println("Error: " + ip + ":" + port + " doesn't exists or is already in use.");
 			System.exit(1);
 		}catch(IOException e) {
 			e.printStackTrace();
