@@ -165,6 +165,42 @@ public class Hexagon implements Runnable{
 		this.color = color;
 	}
 	
+	public void convertColor(int color) {
+		if(this.color == color) return;
+		if (this.color == obliteration.getCOLORS()-1 //If this is a non-taken hexagon or its pointer
+				|| this.color == obliteration.getCOLORS()*2-1) {
+			if(color == obliteration.getColorPlayer()) {
+				if(obliteration.getPlayer() == 0) {
+					obliteration.updateScores(1, 0);
+				}else {
+					obliteration.updateScores(0, 1);
+				}
+			}else {
+				if(obliteration.getPlayer() == 0) {
+					obliteration.updateScores(0, 1);
+				}else {
+					obliteration.updateScores(1, 0);
+				}
+			}
+		}
+		else {
+			if(color == obliteration.getColorPlayer()) {
+				if(obliteration.getPlayer() == 0) {
+					obliteration.updateScores(1,-1);
+				}else {
+					obliteration.updateScores(-1,1);
+				}
+			}else {
+				if(obliteration.getPlayer() == 0) {
+					obliteration.updateScores(-1,1);
+				}else {
+					obliteration.updateScores(1,-1);
+				}
+			}
+		}
+		this.color = color;
+	}
+	
 	private boolean clicked() {
 		int clickX = obliteration.getClickX();
 		int clickY = obliteration.getClickY();

@@ -21,6 +21,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.stream.IntStream;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
@@ -53,8 +54,8 @@ public class Obliteration implements Runnable{
 	private final int HM = 10;//8
 	private final int HY = 20;//16
 	//Dimensions of the hexagon grid
-	private final int NUM_HEX_X = 24;
-	private final int NUM_HEX_Y = 20;
+	private final int NUM_HEX_X = 24;//24
+	private final int NUM_HEX_Y = 20;//20
 	//Dimensions of click areas for hexagons
 	private final int DIM_X = 14;//10
 	private final int DIM_Y = 20;//15
@@ -72,6 +73,7 @@ public class Obliteration implements Runnable{
 	private boolean yourTurn = false;
 	private int player;
 	private int[] playerColors = new int[2];
+	private int[] obliterationScores = {1,1};
 	
 	private String conversions = "NO";
 	
@@ -119,6 +121,11 @@ public class Obliteration implements Runnable{
 		return COLORS;
 	}
 	
+	public synchronized void updateScores(int player1, int player2) {
+		obliterationScores[0] += player1;
+		obliterationScores[1] += player2;
+	}
+	
 	private void setConversions(String converting) {
 		conversions = converting;
 	}
@@ -132,7 +139,7 @@ public class Obliteration implements Runnable{
 	}
 	
 	public Obliteration() {
-		boolean predetermined = true;
+		boolean predetermined = false;
 		if(predetermined) {
 			System.out.println("IP is: " + ip);
 			System.out.println("Port is: " + port);
@@ -304,24 +311,12 @@ public class Obliteration implements Runnable{
 			conversions = conversions.substring(2);
 			
 			hexagons[x][y].setRotation(rotation);
-			hexagons[x][y].setColor(color);
+			hexagons[x][y].convertColor(color);
 		}
-	}
-	
-	private int[] obliterationScores() {
-		int[] scores = {0,0};
-		for (int i = 0; i < NUM_HEX_X; i++) {
-			for (int j = 0; j < NUM_HEX_Y; j++) {
-				if(playerColors[0] == hexagons[i][j].getColor()
-						|| playerColors[0] == hexagons[i][j].getColor()+COLORS) scores[0]++;
-				else if(playerColors[1] == hexagons[i][j].getColor()
-						|| playerColors[1] == hexagons[i][j].getColor()+COLORS) scores[1]++;
-			}
-		}
-		return scores;
 	}
 	
 	private void render(Graphics g) {
+		int winner = winCondition();
 		if(unableToConnectWithOpponent) {
 			Graphics2D g2 = (Graphics2D) g;
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -379,7 +374,6 @@ public class Obliteration implements Runnable{
 			Graphics2D g2 = (Graphics2D) g;
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 			
-			int[] oS = obliterationScores();
 			int stringWidth;
 			if(yourTurn && player == 0) {
 				g.setFont(fontSmallBold);
@@ -393,8 +387,11 @@ public class Obliteration implements Runnable{
 			stringWidth = g2.getFontMetrics().stringWidth("PLAYER 1");
 			g.drawString("PLAYER 1", 565 - stringWidth/2, 80);
 			g.setFont(font);
-			//String of a 2 decimals number
-			g.drawString("" + String.format("%.4g%n",(100*(0.0+oS[0])/(oS[0]+oS[1]))) + "%", 525, 130);
+			//String of 4 numbers. Yes, all of this is just to give a good format and position to the score
+			String score = String.format("%.4g%n",100*(0.0+obliterationScores[0])/IntStream.of(obliterationScores).sum())+"%";
+			//String score = "" + obliterationScores[0];
+			stringWidth = g2.getFontMetrics().stringWidth(score);
+			g.drawString(score, 565 - stringWidth/2, 130);
 			
 			if(yourTurn && player == 1) {
 				g.setFont(fontSmallBold);
@@ -405,9 +402,35 @@ public class Obliteration implements Runnable{
 			}
 			else g.setFont(fontSmall);
 			g.setColor(colorsInfo.normalColors[playerColors[1]]);
-			g.drawString("PLAYER 2", 500, 280);
+			stringWidth = g2.getFontMetrics().stringWidth("PLAYER 2");
+			g.drawString("PLAYER 2", 565 - stringWidth/2, 280);
 			g.setFont(font);
-			g.drawString("" + String.format("%.4g%n",(100*(0.0+oS[1])/(oS[0]+oS[1]))) + "%", 525, 330);
+			score = String.format("%.4g%n",100*(0.0+obliterationScores[1])/IntStream.of(obliterationScores).sum())+"%";
+			//score = "" + obliterationScores[1];
+			stringWidth = g2.getFontMetrics().stringWidth(score);
+			g.drawString(score, 565 - stringWidth/2, 330);
+			if(winner != -1){
+				g.setColor(Color.BLACK);
+				g.fillRect(0, HEIGHT/2 - 35, WIDTH, 50);
+				String winnerText;
+				g.setFont(font);
+				try {
+					Thread.sleep(220);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				if(winner == player) {
+					g.setColor(Color.BLUE);
+					winnerText = "Congratulations! You won!";
+				}else {
+					g.setColor(Color.GRAY);
+					winnerText = "You lost";
+				}
+				g2 = (Graphics2D) g;
+				g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+				stringWidth = g2.getFontMetrics().stringWidth(winnerText);
+				g.drawString(winnerText, WIDTH / 2 - stringWidth / 2, HEIGHT / 2);
+			}
 		}
 	}
 	
@@ -508,6 +531,12 @@ public class Obliteration implements Runnable{
 			}
 		}
 		return grid;
+	}
+	
+	private int winCondition() {
+		if(obliterationScores[0] == 0) return 1;
+		if(obliterationScores[1] == 0) return 0;
+		return -1;
 	}
 	
 	private void loadImages() {
