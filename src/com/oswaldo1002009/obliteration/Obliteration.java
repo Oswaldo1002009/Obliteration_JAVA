@@ -13,8 +13,8 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -555,7 +555,8 @@ public class Obliteration implements Runnable{
 	private void loadFonts() {
 		try {
 		    //create the font to use with sizes
-			Font fileFont = Font.createFont(Font.TRUETYPE_FONT, new File("res/Elianto-Regular.ttf"));
+			InputStream inputStream = this.getClass().getResourceAsStream("/Elianto-Regular.ttf");
+			Font fileFont = Font.createFont(Font.TRUETYPE_FONT, inputStream);
 		    font = fileFont.deriveFont(36f);
 		    fontSmall = fileFont.deriveFont(24f);
 		    fontSmallBold = fileFont.deriveFont(Font.BOLD, 24f);
